@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Quality Predictor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+        console.log("Page loaded");  // Log when the page loads
+    </script>
+</head>
+<body>
+    <h1>Air Quality Predictor</h1>
+    <form id="cityForm">
+        <label for="city_name">Enter City Name:</label>
+        <input type="text" id="city_name" name="city_name" required>
+        
+        <label for="start_date">Start Date:</label>
+        <input type="date" id="start_date" name="start_date" required>
+        
+        <label for="end_date">End Date:</label>
+        <input type="date" id="end_date" name="end_date" required>
+        
+        <button type="submit">Get Predictions</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('cityForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const cityName = document.getElementById('city_name').value;
+            const startDate = document.getElementById('start_date').value;
+            const endDate = document.getElementById('end_date').value;
+            console.log("City name entered:", cityName);  // Log the city name
+            console.log("Date range entered:", startDate, "to", endDate);  // Log the date range
+
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `city_name=${encodeURIComponent(cityName)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Data received from backend:", data);  // Log the data for debugging
+                const resultDiv = document.getElementById('result');
+                if (data.error) {
+                    resultDiv.innerHTML = `<p>${data.error}</p>`;
+                } else {
+                    let html = '<table border="1"><tr>';
+                    for (let key in data[0]) {
+                        html += `<th>${key}</th>`;
+                    }
+                    html += '</tr>';
+                    data.forEach(row => {
+                        html += '<tr>';
+                        for (let key in row) {
+                            html += `<td>${row[key]}</td>`;
+                        }
+                        html += '</tr>';
+                    });
+                    html += '</table>';
+                    resultDiv.innerHTML = html;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);  // Log any errors
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = `<p>An error occurred: ${error.message}</p>`;
+            });
+        });
+    </script>
+</body>
+</html>
